@@ -2,8 +2,8 @@ from flask import Flask, request
 from flask_restful import Resource, Api
 from flask_restful import reqparse
 
-from app import app
-from app.app.core.anomaly.db_utils import dbUtils
+#from app import app
+from db_utils import dbUtils
 app = Flask(__name__)
 api = Api(app)
 
@@ -41,7 +41,8 @@ class CreateUser():
 
     @app.route('/anomaly/by-hierarchy/nav')
     def sunburst_chart_navigation():
-        path = request.args.get('provider')
+        provider = request.args.get('provider')
+        path = request.args.get('provider_id')
         startdate = request.args.get('from')
         enddate = request.args.get('to')
         try:

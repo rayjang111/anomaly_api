@@ -53,16 +53,47 @@ class CreateUser():
                 provider_id = path_list[0]
                 path = path_list[-1] ###해당경로의 미자막 패스
                 env_dict= db.provider_env_dict[provider_id]
-            db.sunburst_chart_navigation(path, env_dict,hierarchy_number, provider_id, startdate, enddate)
-            return db.sunburst_data
+                db.sunburst_chart_navigation(path, env_dict,hierarchy_number, provider_id, startdate, enddate)
+                return db.sunburst_data
+        except:
+            return "[]"
+
+    @app.route('/anomaly/by-hierarchy')
+    def hierarchy_anomaly():
+        provider = request.args.get('provider')
+        path = request.args.get('path')
+        startdate = request.args.get('from')
+        enddate = request.args.get('to')
+        try:
+            if 'vmware' in provider:
+                db = dbUtils(db_settings)
+                path_list= path.split('/')
+                db.hierarchy_anomaly(path_list, startdate, enddate)
+                return db.hierarchy_anomaly_data
+        except:
+            return "[]"
+
+    @app.route('/anomaly/by-hierarchy/metric')
+    def hierarchy_anomaly_metric():
+        provider = request.args.get('provider')
+        path = request.args.get('path')
+        startdate = request.args.get('from')
+        enddate= request.args.get('to')
+        try:
+            if 'vmware' in provider:
+                db = dbUtils(db_settings)
+                path_list= path.split('/')
+                db.hierarchy_anomaly_metric(path_list, startdate, enddate)
+                return db.hierarchy_anomaly_metric_data
         except:
             return "[]"
 
 
+
+
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True,port=5000)
-
-
-
-
 

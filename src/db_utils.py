@@ -6,6 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import requests
 import json
+from datetime import timedelta
 
 import pandas as pd
 import numpy as np
@@ -86,79 +87,85 @@ class dbUtils():
             if "TEST" in prov_id:
                 pass
             elif 'vmware' in prov_id:
-                datacenter_env_id = list(data_ids[data_ids['data_name'] == 'vmware_datacenter_env']['data_id'])[0]
-                cluster_env_id = list(data_ids[data_ids['data_name'] == 'vmware_cluster_env']['data_id'])[0]
-                host_env_id = list(data_ids[data_ids['data_name'] == 'vmware_host_env']['data_id'])[0]
-                vm_env_id = list(data_ids[data_ids['data_name'] == 'vmware_vm_env']['data_id'])[0]
+                try:
+                    datacenter_env_id = list(data_ids[data_ids['data_name'] == 'vmware_datacenter_env']['data_id'])[0]
+                    cluster_env_id = list(data_ids[data_ids['data_name'] == 'vmware_cluster_env']['data_id'])[0]
+                    host_env_id = list(data_ids[data_ids['data_name'] == 'vmware_host_env']['data_id'])[0]
+                    vm_env_id = list(data_ids[data_ids['data_name'] == 'vmware_vm_env']['data_id'])[0]
 
-                datacenter_env = pd.read_sql_query(
-                    "select resource_id as datacenter_resource_id, name as datacenter_name from vmware.tb_metric_datacenter_env_{datacenter_env_id} where time=(select max(time) from vmware.tb_metric_datacenter_env_{datacenter_env_id})".format(
-                        datacenter_env_id=datacenter_env_id), self.engine)
-                cluster_env = pd.read_sql_query(
-                    "select resource_id as cluster_resource_id, name as cluster_name, parent_resource_id as datacenter_resource_id from vmware.tb_metric_cluster_env_{cluster_env_id} where time=(select max(time) from vmware.tb_metric_cluster_env_{cluster_env_id})".format(
-                        cluster_env_id=cluster_env_id), self.engine)
-                host_env = pd.read_sql_query(
-                    "select resource_id as host_resource_id, name as host_name, parent_resource_id as cluster_resource_id from vmware.tb_metric_host_env_{host_env_id} where time=(select max(time) from vmware.tb_metric_host_env_{host_env_id})".format(
-                        host_env_id=host_env_id), self.engine)
-                vm_env = pd.read_sql_query(
-                    "select resource_id as vm_resource_id, name as vm_name , parent_resource_id as host_resource_id  from vmware.tb_metric_vm_env_{vm_env_id} where time=(select max(time) from vmware.tb_metric_vm_env_{vm_env_id})".format(
-                        vm_env_id=vm_env_id), self.engine)
+                    datacenter_env = pd.read_sql_query(
+                        "select resource_id as datacenter_resource_id, name as datacenter_name from vmware.tb_metric_datacenter_env_{datacenter_env_id} where time=(select max(time) from vmware.tb_metric_datacenter_env_{datacenter_env_id})".format(
+                            datacenter_env_id=datacenter_env_id), self.engine)
+                    cluster_env = pd.read_sql_query(
+                        "select resource_id as cluster_resource_id, name as cluster_name, parent_resource_id as datacenter_resource_id from vmware.tb_metric_cluster_env_{cluster_env_id} where time=(select max(time) from vmware.tb_metric_cluster_env_{cluster_env_id})".format(
+                            cluster_env_id=cluster_env_id), self.engine)
+                    host_env = pd.read_sql_query(
+                        "select resource_id as host_resource_id, name as host_name, parent_resource_id as cluster_resource_id from vmware.tb_metric_host_env_{host_env_id} where time=(select max(time) from vmware.tb_metric_host_env_{host_env_id})".format(
+                            host_env_id=host_env_id), self.engine)
+                    vm_env = pd.read_sql_query(
+                        "select resource_id as vm_resource_id, name as vm_name , parent_resource_id as host_resource_id  from vmware.tb_metric_vm_env_{vm_env_id} where time=(select max(time) from vmware.tb_metric_vm_env_{vm_env_id})".format(
+                            vm_env_id=vm_env_id), self.engine)
 
-                merged_1 = pd.merge(datacenter_env, cluster_env)
-                merged_2 = pd.merge(merged_1, host_env)
-                merged_3 = pd.merge(merged_2, vm_env)
-                merged_3['provider_id'] = prov_id
-                merged_3['virtualcenter_resource_id'] = prov_id
-                merged_3['virtualcenter_name'] = tb_provider[tb_provider['prvd_id'] == prov_id]['nm'].iloc[0]
-                self.provider_env_dict[prov_id] = merged_3
+                    merged_1 = pd.merge(datacenter_env, cluster_env)
+                    merged_2 = pd.merge(merged_1, host_env)
+                    merged_3 = pd.merge(merged_2, vm_env)
+                    merged_3['provider_id'] = prov_id
+                    merged_3['virtualcenter_resource_id'] = prov_id
+                    merged_3['virtualcenter_name'] = tb_provider[tb_provider['prvd_id'] == prov_id]['nm'].iloc[0]
+                    self.provider_env_dict[prov_id] = merged_3
+                except:
+                    pass
             elif 'openstack' in prov_id:
-                region_env_id = list(data_ids[data_ids['data_name'] == 'openstack_region_env']['data_id'])[0]
-                zone_env_id = list(data_ids[data_ids['data_name'] == 'openstack_zone_env']['data_id'])[0]
-                domain_env_id = list(data_ids[data_ids['data_name'] == 'openstack_domain_env']['data_id'])[0]
-                project_env_id = list(data_ids[data_ids['data_name'] == 'openstack_project_env']['data_id'])[0]
-                host_env_id = list(data_ids[data_ids['data_name'] == 'openstack_host_env']['data_id'])[0]
-                vm_env_id = list(data_ids[data_ids['data_name'] == 'openstack_vm_env']['data_id'])[0]
+                try:
+                    region_env_id = list(data_ids[data_ids['data_name'] == 'openstack_region_env']['data_id'])[0]
+                    zone_env_id = list(data_ids[data_ids['data_name'] == 'openstack_zone_env']['data_id'])[0]
+                    domain_env_id = list(data_ids[data_ids['data_name'] == 'openstack_domain_env']['data_id'])[0]
+                    project_env_id = list(data_ids[data_ids['data_name'] == 'openstack_project_env']['data_id'])[0]
+                    host_env_id = list(data_ids[data_ids['data_name'] == 'openstack_host_env']['data_id'])[0]
+                    vm_env_id = list(data_ids[data_ids['data_name'] == 'openstack_vm_env']['data_id'])[0]
 
-                region_env = pd.read_sql_query(
-                    "select resource_id as region_resource_id, resource_id as region_name from openstack.tb_metric_region_env_{region_env_id} where time=(select max(time) from openstack.tb_metric_region_env_{region_env_id})".format(
-                        region_env_id=region_env_id), self.engine)
-                zone_env = pd.read_sql_query(
-                    "select resource_id as zone_resource_id, resource_id as zone_name, region_id as region_resource_id from openstack.tb_metric_zone_env_{zone_env_id} where time=(select max(time) from openstack.tb_metric_zone_env_{zone_env_id})".format(
-                        zone_env_id=zone_env_id), self.engine)
-                domain_env = pd.read_sql_query(
-                    "select resource_id as domain_resource_id, name as domain_name, region_id as region_resource_id from openstack.tb_metric_domain_env_{domain_env_id} where time=(select max(time) from openstack.tb_metric_domain_env_{domain_env_id})".format(
-                        domain_env_id=domain_env_id), self.engine)
+                    region_env = pd.read_sql_query(
+                        "select resource_id as region_resource_id, resource_id as region_name from openstack.tb_metric_region_env_{region_env_id} where time=(select max(time) from openstack.tb_metric_region_env_{region_env_id})".format(
+                            region_env_id=region_env_id), self.engine)
+                    zone_env = pd.read_sql_query(
+                        "select resource_id as zone_resource_id, resource_id as zone_name, region_id as region_resource_id from openstack.tb_metric_zone_env_{zone_env_id} where time=(select max(time) from openstack.tb_metric_zone_env_{zone_env_id})".format(
+                            zone_env_id=zone_env_id), self.engine)
+                    domain_env = pd.read_sql_query(
+                        "select resource_id as domain_resource_id, name as domain_name, region_id as region_resource_id from openstack.tb_metric_domain_env_{domain_env_id} where time=(select max(time) from openstack.tb_metric_domain_env_{domain_env_id})".format(
+                            domain_env_id=domain_env_id), self.engine)
 
-                project_env = pd.read_sql_query(
-                    "select resource_id as project_resource_id, name as project_name, domain_id as domain_resource_id from openstack.tb_metric_project_env_{project_env_id} where time=(select max(time) from openstack.tb_metric_project_env_{project_env_id})".format(
-                        project_env_id=project_env_id), self.engine)
+                    project_env = pd.read_sql_query(
+                        "select resource_id as project_resource_id, name as project_name, domain_id as domain_resource_id from openstack.tb_metric_project_env_{project_env_id} where time=(select max(time) from openstack.tb_metric_project_env_{project_env_id})".format(
+                            project_env_id=project_env_id), self.engine)
 
-                host_env = pd.read_sql_query(
-                    "select resource_id as host_resource_id, name as host_name, availability_zone as zone_resource_id from openstack.tb_metric_host_env_{host_env_id} where time=(select max(time) from openstack.tb_metric_host_env_{host_env_id})".format(
-                        host_env_id=host_env_id), self.engine)
-                vm_env_physical = pd.read_sql_query(
-                    "select resource_id as vm_resource_id, name as vm_name , hypervisor_host_name as host_resource_id  from openstack.tb_metric_vm_env_{vm_env_id} where time=(select max(time) from openstack.tb_metric_vm_env_{vm_env_id})".format(
-                        vm_env_id=vm_env_id), self.engine)
+                    host_env = pd.read_sql_query(
+                        "select resource_id as host_resource_id, name as host_name, availability_zone as zone_resource_id from openstack.tb_metric_host_env_{host_env_id} where time=(select max(time) from openstack.tb_metric_host_env_{host_env_id})".format(
+                            host_env_id=host_env_id), self.engine)
+                    vm_env_physical = pd.read_sql_query(
+                        "select resource_id as vm_resource_id, name as vm_name , hypervisor_host_name as host_resource_id  from openstack.tb_metric_vm_env_{vm_env_id} where time=(select max(time) from openstack.tb_metric_vm_env_{vm_env_id})".format(
+                            vm_env_id=vm_env_id), self.engine)
 
-                vm_env_logical = pd.read_sql_query(
-                    "select resource_id as vm_resource_id, name as vm_name , project_id as project_resource_id  from openstack.tb_metric_vm_env_{vm_env_id} where time=(select max(time) from openstack.tb_metric_vm_env_{vm_env_id})".format(
-                        vm_env_id=vm_env_id), self.engine)
+                    vm_env_logical = pd.read_sql_query(
+                        "select resource_id as vm_resource_id, name as vm_name , project_id as project_resource_id  from openstack.tb_metric_vm_env_{vm_env_id} where time=(select max(time) from openstack.tb_metric_vm_env_{vm_env_id})".format(
+                            vm_env_id=vm_env_id), self.engine)
 
-                merged_1 = pd.merge(region_env, zone_env)
-                merged_2 = pd.merge(merged_1, host_env)
-                merged_3 = pd.merge(merged_2, vm_env_physical)
-                merged_3['provider_id'] = prov_id
-                merged_3['provider_resource_id'] = prov_id
-                merged_3['provider_name'] = tb_provider[tb_provider['prvd_id'] == prov_id]['nm'].iloc[0]
-                self.provider_env_dict['{prov_id}_physical'.format(prov_id=prov_id)] = merged_3
+                    merged_1 = pd.merge(region_env, zone_env)
+                    merged_2 = pd.merge(merged_1, host_env)
+                    merged_3 = pd.merge(merged_2, vm_env_physical)
+                    merged_3['provider_id'] = prov_id
+                    merged_3['provider_resource_id'] = prov_id
+                    merged_3['provider_name'] = tb_provider[tb_provider['prvd_id'] == prov_id]['nm'].iloc[0]
+                    self.provider_env_dict['{prov_id}_physical'.format(prov_id=prov_id)] = merged_3
 
-                merged_1 = pd.merge(region_env, domain_env)
-                merged_2 = pd.merge(merged_1, project_env)
-                merged_3 = pd.merge(merged_2, vm_env_logical)
-                merged_3['provider_id'] = prov_id
-                merged_3['provider_resource_id'] = prov_id
-                merged_3['provider_name'] = tb_provider[tb_provider['prvd_id'] == prov_id]['nm'].iloc[0]
-                self.provider_env_dict['{prov_id}_logical'.format(prov_id=prov_id)] = merged_3
+                    merged_1 = pd.merge(region_env, domain_env)
+                    merged_2 = pd.merge(merged_1, project_env)
+                    merged_3 = pd.merge(merged_2, vm_env_logical)
+                    merged_3['provider_id'] = prov_id
+                    merged_3['provider_resource_id'] = prov_id
+                    merged_3['provider_name'] = tb_provider[tb_provider['prvd_id'] == prov_id]['nm'].iloc[0]
+                    self.provider_env_dict['{prov_id}_logical'.format(prov_id=prov_id)] = merged_3
+                except:
+                    pass
 
     def get_anomaly_status(self, prvdType='openstack', prvdId='openstack20200709080543', tplgType='host',
                            metricType='network', task='anomaly',
@@ -813,7 +820,7 @@ class dbUtils():
         task_data = task_response.json()
         event_data = pd.DataFrame(event_data)
         task_data = pd.DataFrame(task_data)
-        event_data['createdTime'] = pd.to_datetime(event_data['createdTime'], unit='ms')
+        event_data['createdTime'] = pd.to_datetime(event_data['createdTime'], unit='ms') #todo update log columns
         event_data.sort_values(by=['createdTime'], inplace=True)
         task_data['createdTime'] = pd.to_datetime(task_data['createdTime'], unit='ms')
         task_data.sort_values(by=['createdTime'], inplace=True)
@@ -871,10 +878,361 @@ class dbUtils():
         return self.hierarchy_anomaly_metric_data
 
 
+    def hierarchy_anomaly_host(self, path_list, startdate, enddate):
+        self.hierarchy_anomaly_host_data = dict()
+
+        anomaly_status_dict=dict()
+
+        ### status table
+        status_table=pd.read_sql_query("select tp, nm, var_val from framework.tb_reg_variable",self.engine)
+        status_table =status_table[status_table['tp']=='ANOMALY_STATUS']
+        anomaly_status_dict['normal']= int(status_table[status_table['nm']=='SCORE_NORMAL']['var_val'].iloc[0])
+        anomaly_status_dict['warning']= int(status_table[status_table['nm']=='SCORE_WARNING']['var_val'].iloc[0])
+        anomaly_status_dict['critical'] = int(status_table[status_table['nm'] == 'SCORE_CRITICAL']['var_val'].iloc[0])
+
+        def color_mapping(value):
+            if value> anomaly_status_dict['critical']:
+                return 'red'
+            elif value> anomaly_status_dict['warning']:
+                return 'yellow'
+            else :
+                return 'green'
+
+        ###hierarchy setting
+        hierarchy_list = ['virtualcenter', 'datacenter', 'cluster', 'host']
+        provider_id = path_list[1]
+        selected_path = path_list[-1]
+        current_hierarchy = hierarchy_list[len(path_list) - 2]
+
+        env_dict = self.provider_env_dict[provider_id]
+        env_dict = env_dict[env_dict['{hierarchy}_resource_id'.format(hierarchy=current_hierarchy)] == selected_path]
+        vms_dict = env_dict[['vm_name','vm_resource_id']]
+        env_dict = env_dict.drop(labels=['vm_name', 'vm_resource_id'], axis=1)
+        env_dict.drop_duplicates(inplace=True)
+
+
+        data_ids = self.get_data_ids()[provider_id]
+
+        cpu_id = data_ids[data_ids['data_name'] == 'vmware_host_cpu']['data_id'].iloc[0]
+        memory_id = data_ids[data_ids['data_name'] == 'vmware_host_memory']['data_id'].iloc[0]
+        network_id = data_ids[data_ids['data_name'] == 'vmware_host_network']['data_id'].iloc[0]
+        disk_id = data_ids[data_ids['data_name'] == 'vmware_host_disk']['data_id'].iloc[0]
+
+        ### import anomaly data for scoreboard and where resource_id= host
+        cpu_anomaly_data = pd.read_sql_query(
+            "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+             from analytic_vmware.anomaly_host_cpu_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' group by resource_id, bucket_time order by bucket_time".format(
+                data_id=cpu_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+        memory_anomaly_data = pd.read_sql_query(
+            "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+             from analytic_vmware.anomaly_host_memory_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}'  group by resource_id, bucket_time order by bucket_time".format(
+                data_id=memory_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+        network_anomaly_data = pd.read_sql_query(
+            "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+             from analytic_vmware.anomaly_host_network_{data_id} where time > '{startdate}' and time< '{enddate}'  and resource_id='{selected_path}' group by resource_id, bucket_time order by bucket_time".format(
+                data_id=network_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+        disk_anomaly_data = pd.read_sql_query(
+            "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+            from analytic_vmware.anomaly_host_disk_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}'  group by resource_id, bucket_time order by bucket_time".format(
+                data_id=disk_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+
+        cpu_anomaly_data['sign'] = cpu_anomaly_data['anomaly_score'].apply(color_mapping)
+        cpu_anomaly_data.index = cpu_anomaly_data['bucket_time']
+        memory_anomaly_data['sign'] = memory_anomaly_data['anomaly_score'].apply(color_mapping)
+        memory_anomaly_data.index = memory_anomaly_data['bucket_time']
+        network_anomaly_data['sign'] = network_anomaly_data['anomaly_score'].apply(color_mapping)
+        network_anomaly_data.index = network_anomaly_data['bucket_time']
+        disk_anomaly_data['sign'] = disk_anomaly_data['anomaly_score'].apply(color_mapping)
+        disk_anomaly_data.index = disk_anomaly_data['bucket_time']
+
+        total_anomaly_data=pd.DataFrame()
+        total_anomaly_data['cpu']=cpu_anomaly_data['anomaly_score']
+        total_anomaly_data['memory']=memory_anomaly_data['anomaly_score']
+        total_anomaly_data['network']=network_anomaly_data['anomaly_score']
+        total_anomaly_data['disk']=disk_anomaly_data['anomaly_score']
+        total_anomaly_data['mean'] = total_anomaly_data.mean(axis=1)
+        total_anomaly_data['time'] = total_anomaly_data.index
+
+        cpu_anomaly_count= sum(cpu_anomaly_data['sign']=='red')
+        memory_anomaly_count = sum(memory_anomaly_data['sign'] == 'red')
+        network_anomaly_count = sum(network_anomaly_data['sign'] == 'red')
+        disk_anomaly_count=sum(disk_anomaly_data['sign'] == 'red')
+
+        cpu_anomaly_score= np.mean(cpu_anomaly_data['anomaly_score'])
+        memory_anomaly_score= np.mean(memory_anomaly_data['anomaly_score'])
+        network_anomaly_score= np.mean(network_anomaly_data['anomaly_score'])
+        disk_anomaly_score= np.mean(disk_anomaly_data['anomaly_score'])
+
+        score_board = [ [cpu_anomaly_score,cpu_anomaly_count], [memory_anomaly_score, memory_anomaly_count], [network_anomaly_score,network_anomaly_count],
+                      [disk_anomaly_score, disk_anomaly_count]]
+
+        ####Host events and tasks
+        host_url= "http://172.168.0.29:8089" ### event task api
+        event_path ="/v1/log/vmware/{provider_id}/event".format(provider_id=provider_id)
+        task_path ="/v1/log/vmware/{provider_id}/task".format(provider_id=provider_id)
+
+
+
+        #params= {'from':startdate, 'to':enddate, 'resource-id': selected_path} #todo: add resource_id
+        params = {'from': '2020-10-24', 'to': '2020-10-30', 'resource-id': selected_path} #todo 날짜 조정
+        event_response = requests.get(url=host_url+ event_path, params=params)
+        task_response = requests.get(url=host_url+ task_path, params=params)
+
+        if event_response.raise_for_status():
+            print('event response error')
+        if task_response.raise_for_status():
+            print('task response error')
+        event_data = event_response.json()
+        task_data = task_response.json()
+        event_data = pd.DataFrame(event_data)
+        task_data = pd.DataFrame(task_data)
+        if len(event_data):
+            unique_events=np.unique(event_data['eventTypeId'])
+            event_data['createdTime'] = pd.to_datetime(event_data['createdTime'], unit='ms')
+            event_data.sort_values(by=['createdTime'], inplace=True)
+            event_data['type'] = 'event'
+            event_data = event_data[['formattedMessage', 'createdTime', 'eventTypeId','type']]
+        if len(task_data):
+            unique_tasks=np.unique(task_data['descriptionId'])
+            task_data['createdTime'] = pd.to_datetime(task_data['createdTime'], unit='ms')
+            task_data.sort_values(by=['createdTime'], inplace=True)
+            task_data['type'] = 'task'
+            task_data['message']= 'entity: '+task_data['entityName']+', task: '+ task_data['descriptionId'] #todo: message ->  formatted message
+            task_data = task_data[['formattedMessage', 'createdTime', 'type', 'descriptionId']]
+        log_data=pd.concat([event_data,task_data])
+        log_data.sort_values(by=['createdTime'], inplace=True)
+        log_data.index = log_data['createdTime']
+        log_data['createdTime_bucket']=pd.to_datetime(log_data.index.to_period('H').astype(str))- timedelta(days=36) #todo: remove timedelat when data is ok
+        anomaly_logs_merged=pd.merge(total_anomaly_data,log_data,how='left',left_on='time', right_on='createdTime_bucket')
+        anomaly_logs_merged.index= anomaly_logs_merged['time']
+        grouped_score = anomaly_logs_merged.groupby(by=['eventTypeId']).mean()['mean']
+        host_event_tasks=list()
+        for event_type in unique_events:
+            data=dict()
+            data['label'] = event_type
+            data['value'] = grouped_score[event_type]
+            data['type'] = 'event'
+            selected_logs= anomaly_logs_merged[anomaly_logs_merged['eventTypeId']==event_type].copy()
+            selected_logs['createdTime'] = (selected_logs['createdTime'].astype(np.int64) / 1000000000).astype(int)
+            data['messages'] = selected_logs[['createdTime','formattedMessage','mean']].values.tolist()
+            host_event_tasks.append(data)
+
+        ###prediction_based_anomaly
+
+        cpu_workload_data = pd.read_sql_query(
+            "select avg(usage_avg), resource_id, time_bucket('1 hour',time) as bucket_time \
+             from vmware.tb_metric_host_cpu_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}'  group by resource_id, bucket_time order by bucket_time".format(
+                data_id=cpu_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+        memory_workload_data = pd.read_sql_query(
+            "select avg(usage_avg), resource_id, time_bucket('1 hour',time) as bucket_time \
+             from vmware.tb_metric_host_memory_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}' group by resource_id, bucket_time order by bucket_time".format(
+                data_id=memory_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+        network_workload_data = pd.read_sql_query(
+            "select avg(usage_avg_kbps), resource_id, time_bucket('1 hour',time) as bucket_time \
+             from vmware.tb_metric_host_network_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}' group by resource_id, bucket_time order by bucket_time".format(
+                data_id=network_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+        disk_workload_data = pd.read_sql_query(
+            "select avg(usage_avg), resource_id, time_bucket('1 hour',time) as bucket_time \
+            from vmware.tb_metric_host_disk_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}' group by resource_id, bucket_time order by bucket_time".format(
+                data_id=disk_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+
+        cpu_workload_data['bucket_time'] = (cpu_workload_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+        memory_workload_data['bucket_time'] = (memory_workload_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+        network_workload_data['bucket_time'] = (network_workload_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+        disk_workload_data['bucket_time'] = (disk_workload_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+
+
+        red_cpu_anomaly = cpu_anomaly_data[cpu_anomaly_data['sign']=='red']
+        red_memory_anomaly = memory_anomaly_data[memory_anomaly_data['sign']=='red']
+        red_disk_anomaly = disk_anomaly_data[disk_anomaly_data['sign']=='red']
+        red_network_anomaly = network_anomaly_data[network_anomaly_data['sign']=='red']
+
+        red_cpu_anomaly['bucket_time'] = (red_cpu_anomaly['bucket_time'].astype(np.int64)/1000000000).astype(int)
+        red_memory_anomaly['bucket_time'] = (red_memory_anomaly['bucket_time'].astype(np.int64)/1000000000).astype(int)
+        red_network_anomaly['bucket_time'] = (red_network_anomaly['bucket_time'].astype(np.int64)/1000000000).astype(int)
+        red_disk_anomaly['bucket_time'] = (red_disk_anomaly['bucket_time'].astype(np.int64)/1000000000).astype(int)
+
+
+        cpu_prediction_data = pd.read_sql_query(
+            "select avg(value) as avg_value, avg(min) as avg_min, avg(max) as avg_max, resource_id, time_bucket('1 hour',time) as bucket_time \
+             from analytic_vmware.host_cpu_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}' and metrictype = 'usage_avg'  group by resource_id, bucket_time order by bucket_time".format(
+                data_id=cpu_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+
+        memory_prediction_data = pd.read_sql_query(
+            "select avg(value) as avg_value, avg(min) as avg_min, avg(max) as avg_max, resource_id, time_bucket('1 hour',time) as bucket_time \
+             from analytic_vmware.host_memory_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}' and metrictype = 'usage_avg'  group by resource_id, bucket_time order by bucket_time".format(
+                data_id=memory_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+
+        network_prediction_data = pd.read_sql_query(
+            "select avg(value) as avg_value, avg(min) as avg_min, avg(max) as avg_max, resource_id, time_bucket('1 hour',time) as bucket_time \
+             from analytic_vmware.host_network_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}' and metrictype = 'usage_avg_kbps'  group by resource_id, bucket_time order by bucket_time".format(
+                data_id=network_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+
+        disk_prediction_data = pd.read_sql_query(
+            "select avg(value) as avg_value, avg(min) as avg_min, avg(max) as avg_max, resource_id, time_bucket('1 hour',time) as bucket_time \
+             from analytic_vmware.host_disk_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id = '{resource_id}' and metrictype = 'usage_avg'  group by resource_id, bucket_time order by bucket_time".format(
+                data_id=disk_id, startdate=startdate, enddate=enddate, resource_id=selected_path), self.engine)
+
+        cpu_prediction_data['bucket_time'] = (cpu_prediction_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+        memory_prediction_data['bucket_time'] = (memory_prediction_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+        network_prediction_data['bucket_time'] = (network_prediction_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+        disk_prediction_data['bucket_time'] = (disk_prediction_data['bucket_time'].astype(np.int64) / 1000000000).astype(int)
+
+
+
+        cpu_data=dict()
+        cpu_data['type'] ='cpu'
+        cpu_data['prediction'] = cpu_prediction_data[['bucket_time','avg_value']].values.tolist()
+        cpu_data['range']= cpu_prediction_data[['bucket_time','avg_min','avg_max']].values.tolist()
+        cpu_data['workload']=cpu_workload_data[['bucket_time','avg']].values.tolist()
+        cpu_data['anomaly']=red_cpu_anomaly[['bucket_time','anomaly_score']].values.tolist()
+
+        memory_data=dict()
+        memory_data['type'] ='memory'
+        memory_data['prediction'] = memory_prediction_data[['bucket_time','avg_value']].values.tolist()
+        memory_data['range']= memory_prediction_data[['bucket_time','avg_min','avg_max']].values.tolist()
+        memory_data['workload']=memory_workload_data[['bucket_time','avg']].values.tolist()
+        memory_data['anomaly']=red_memory_anomaly[['bucket_time','anomaly_score']].values.tolist()
+
+        network_data=dict()
+        network_data['type'] ='network'
+        network_data['prediction'] = network_prediction_data[['bucket_time','avg_value']].values.tolist()
+        network_data['range']= network_prediction_data[['bucket_time','avg_min','avg_max']].values.tolist()
+        network_data['workload']=network_workload_data[['bucket_time','avg']].values.tolist()
+        network_data['anomaly']=red_network_anomaly[['bucket_time','anomaly_score']].values.tolist()
+
+        disk_data=dict()
+        disk_data['type'] ='disk'
+        disk_data['prediction'] = disk_prediction_data[['bucket_time','avg_value']].values.tolist()
+        disk_data['range']= disk_prediction_data[['bucket_time','avg_min','avg_max']].values.tolist()
+        disk_data['workload']=disk_workload_data[['bucket_time','avg']].values.tolist()
+        disk_data['anomaly']=red_disk_anomaly[['bucket_time','anomaly_score']].values.tolist()
+
+        prediction_based_anomaly= [cpu_data, memory_data, network_data, disk_data]
+
+
+        #prediction based anomaly by metric
+
+        cpu_anomaly_data = pd.read_sql_query(
+            "select metrictype, avg(score)*100 as anomaly_score, resource_id \
+             from analytic_vmware.anomaly_host_cpu_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' group by resource_id, metrictype order by anomaly_score".format(
+                data_id=cpu_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+        memory_anomaly_data = pd.read_sql_query(
+            "select metrictype, avg(score)*100 as anomaly_score, resource_id \
+             from analytic_vmware.anomaly_host_memory_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}'  group by resource_id, metrictype order by anomaly_score".format(
+                data_id=memory_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+        network_anomaly_data = pd.read_sql_query(
+            "select metrictype, avg(score)*100 as anomaly_score, resource_id\
+             from analytic_vmware.anomaly_host_network_{data_id} where time > '{startdate}' and time< '{enddate}'  and resource_id='{selected_path}' group by resource_id, metrictype order by anomaly_score".format(
+                data_id=network_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+        disk_anomaly_data = pd.read_sql_query(
+            "select metrictype, avg(score)*100 as anomaly_score, resource_id \
+            from analytic_vmware.anomaly_host_disk_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}'  group by resource_id, metrictype order by anomaly_score".format(
+                data_id=disk_id, startdate=startdate, enddate=enddate, selected_path=selected_path), self.engine)
+
+        cpu_data={
+            'label': 'cpu',
+            'data': cpu_anomaly_data[['metrictype','anomaly_score']].values.tolist()
+            }
+        memory_data={
+            'label': 'memory',
+            'data': memory_anomaly_data[['metrictype','anomaly_score']].values.tolist()
+            }
+        network_data={
+            'label': 'network',
+            'data': network_anomaly_data[['metrictype','anomaly_score']].values.tolist()
+            }
+        disk_data={
+            'label': 'disk',
+            'data': disk_anomaly_data[['metrictype','anomaly_score']].values.tolist()
+            }
+        anomaly_by_metric = [cpu_data, memory_data, network_data, disk_data]
+
+        # vm anomaly score
+        anomaly_score=list()
+        for _, row in vms_dict.iterrows():
+            vm_name = row[0]
+            vm_resource_id = row[1]
+
+            vm_cpu_id = data_ids[data_ids['data_name'] == 'vmware_vm_cpu']['data_id'].iloc[0]
+            vm_memory_id = data_ids[data_ids['data_name'] == 'vmware_vm_memory']['data_id'].iloc[0]
+            vm_network_id = data_ids[data_ids['data_name'] == 'vmware_vm_network']['data_id'].iloc[0]
+            vm_disk_id = data_ids[data_ids['data_name'] == 'vmware_vm_disk']['data_id'].iloc[0]
+
+            vm_anomaly_cpu_count = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+                 from analytic_vmware.anomaly_vm_cpu_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' group by resource_id, bucket_time order by bucket_time".format(
+                    data_id=vm_cpu_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+
+            vm_anomaly_cpu_count = len(vm_anomaly_cpu_count[vm_anomaly_cpu_count['anomaly_score']>anomaly_status_dict['critical']])
+
+            vm_anomaly_memory_count = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+                 from analytic_vmware.anomaly_vm_memory_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' group by resource_id, bucket_time order by bucket_time".format(
+                    data_id=vm_memory_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+
+            vm_anomaly_memory_count = len(
+                vm_anomaly_memory_count[vm_anomaly_memory_count['anomaly_score'] > anomaly_status_dict['critical']])
+
+            vm_anomaly_network_count = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+                 from analytic_vmware.anomaly_vm_network_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' group by resource_id, bucket_time order by bucket_time".format(
+                    data_id=vm_network_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+
+            vm_anomaly_network_count = len(
+                vm_anomaly_network_count[vm_anomaly_network_count['anomaly_score'] > anomaly_status_dict['critical']])
+
+            vm_anomaly_disk_count = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score, resource_id, time_bucket('1 hour',time) as bucket_time \
+                 from analytic_vmware.anomaly_vm_disk_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' group by resource_id, bucket_time order by bucket_time".format(
+                    data_id=vm_disk_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+
+            vm_anomaly_disk_count = len(
+                vm_anomaly_disk_count[vm_anomaly_disk_count['anomaly_score'] > anomaly_status_dict['critical']])
+
+            vm_anomaly_total= vm_anomaly_cpu_count+ vm_anomaly_memory_count + vm_anomaly_network_count + vm_anomaly_disk_count
+
+
+            vm_cpu_anomaly_data = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score\
+                 from analytic_vmware.anomaly_vm_cpu_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}'  ".format(
+                    data_id=vm_cpu_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+            vm_memory_anomaly_data = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score\
+                 from analytic_vmware.anomaly_vm_memory_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' ".format(
+                    data_id=vm_memory_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+            vm_network_anomaly_data = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score\
+                 from analytic_vmware.anomaly_vm_network_{data_id} where time > '{startdate}' and time< '{enddate}'  and resource_id='{selected_path}'  ".format(
+                    data_id=vm_network_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+            vm_disk_anomaly_data = pd.read_sql_query(
+                "select avg(score)*100 as anomaly_score\
+                from analytic_vmware.anomaly_vm_disk_{data_id} where time > '{startdate}' and time< '{enddate}' and resource_id='{selected_path}' ".format(
+                    data_id=vm_disk_id, startdate=startdate, enddate=enddate, selected_path=vm_resource_id), self.engine)
+
+            vm_data={
+                'name':vm_name,
+                'cpu':vm_cpu_anomaly_data.iloc[0,0],
+                'memory':vm_memory_anomaly_data.iloc[0,0],
+                'network':vm_network_anomaly_data.iloc[0,0],
+                'disk': vm_disk_anomaly_data.iloc[0,0],
+                'anomaly_num': vm_anomaly_total
+            }
+            anomaly_score.append(vm_data)
+        self.hierarchy_anomaly_host_data['score_board']= score_board
+        self.hierarchy_anomaly_host_data['event_task']= host_event_tasks
+        self.hierarchy_anomaly_host_data['prediction_based_anomaly']= prediction_based_anomaly
+        self.hierarchy_anomaly_host_data['prediction_based_anomaly_by_metric']= anomaly_by_metric
+        self.hierarchy_anomaly_host_data['anomaly_score']= anomaly_score
+        self.hierarchy_anomaly_host_data= json.dumps(self.hierarchy_anomaly_host_data)
+        return self.hierarchy_anomaly_host_data
+
+
+
 # self.hierarchy_anomaly_data.keys()
 #  json.dumps(self.hierarchy_anomaly_data['score_by_metric'])
 
-
+#
 db_settings = {
     'user': 'admin',
     'password': 'admin!123',
@@ -883,12 +1241,13 @@ db_settings = {
     'db': 'harmony'
 }
 #
-# db = dbUtils(db_settings)
+#db = dbUtils(db_settings)
 # db.provider_env_dict['openstack20200709080543_physical']
 # db.provider_env_dict['openstack20200709080543_logical']
 # db.provider_env_dict['vmware20200529235050']
 # db.hierarchy_anomaly(path_list=['','vmware20200529235050'],startdate='2020-09-10', enddate='2020-10-10')
 # db.hierarchy_anomaly_metric(path_list=['','vmware20200529235050'],startdate='2020-09-10', enddate='2020-10-10')
+#db.hierarchy_anomaly_host(path_list=['','vmware20200529235050', 'datacenter-2', 'domain-c89', 'host-21'],startdate='2020-09-10', enddate='2020-10-10')
 # host ='http://172.168.0.29:9998'
 # path ='/anomaly/by-hierarchy/nav'
 # url = host+path

@@ -88,10 +88,20 @@ class CreateUser():
         except:
             return "[]"
 
-
-
-
-
+    @app.route('/anomaly/by-hierarchy/host')
+    def hierarchy_anomaly_host():
+        provider = request.args.get('provider')
+        path = request.args.get('path')
+        startdate = request.args.get('from')
+        enddate = request.args.get('to')
+        try:
+            if 'vmware' in provider:
+                db = dbUtils(db_settings)
+                path_list = path.split('/')
+                db.hierarchy_anomaly_host(path_list, startdate, enddate)
+                return db.hierarchy_anomaly_host_data
+        except:
+            return "[]"
 
 
 if __name__ == '__main__':

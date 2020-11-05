@@ -42,11 +42,11 @@ class CreateUser():
     @app.route('/anomaly/by-hierarchy/nav')
     def sunburst_chart_navigation():
         provider = request.args.get('provider')
-        path = request.args.get('provider_id')
+        path = request.args.get('provider-id')
         startdate = request.args.get('from')
         enddate = request.args.get('to')
         try:
-            if 'vmware' in path:
+            if 'vmware' in provider:
                 db = dbUtils(db_settings)
                 path_list = path.split('/')
                 hierarchy_number= len(path_list)-1
@@ -55,6 +55,17 @@ class CreateUser():
                 env_dict= db.provider_env_dict[provider_id]
                 db.sunburst_chart_navigation(path, env_dict,hierarchy_number, provider_id, startdate, enddate)
                 return db.sunburst_data
+
+            if 'openstack' in provider:
+                db = dbUtils(db_settings)
+                path_list = path.split('/')
+                hierarchy_number= len(path_list)-1
+                provider_id = path_list[0]
+                path = path_list[-1] ###해당경로의 미자막 패스
+                env_dict= db.provider_env_dict[provider_id+'_physical']
+                db.sunburst_chart_navigation_openstack(path, env_dict,hierarchy_number, provider_id, startdate, enddate)
+                return db.sunburst_data
+
         except:
             return "[]"
 
@@ -70,6 +81,13 @@ class CreateUser():
                 path_list= path.split('/')
                 db.hierarchy_anomaly(path_list, startdate, enddate)
                 return db.hierarchy_anomaly_data
+
+            if 'openstack' in provider:
+                db = dbUtils(db_settings)
+                path_list = path.split('/')
+                db.hierarchy_anomaly_openstack(path_list, startdate, enddate)
+                return db.hierarchy_anomaly_data
+
         except:
             return "[]"
 
@@ -85,6 +103,12 @@ class CreateUser():
                 path_list= path.split('/')
                 db.hierarchy_anomaly_metric(path_list, startdate, enddate)
                 return db.hierarchy_anomaly_metric_data
+
+            if 'openstack' in provider:
+                db = dbUtils(db_settings)
+                path_list = path.split('/')
+                db.hierarchy_anomaly_metric_openstack(path_list, startdate, enddate)
+                return db.hierarchy_anomaly_metric_data
         except:
             return "[]"
 
@@ -99,6 +123,11 @@ class CreateUser():
                 db = dbUtils(db_settings)
                 path_list = path.split('/')
                 db.hierarchy_anomaly_host(path_list, startdate, enddate)
+                return db.hierarchy_anomaly_host_data
+            if 'openstack' in provider:
+                db = dbUtils(db_settings)
+                path_list = path.split('/')
+                db.hierarchy_anomaly_host_openstack(path_list, startdate, enddate)
                 return db.hierarchy_anomaly_host_data
         except:
             return "[]"

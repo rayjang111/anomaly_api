@@ -20,13 +20,13 @@ class CreateUser():
 
     @app.route('/core/score/<prvdType>/<prvdId>/<tplgType>/<metricType>/<task>', methods=['GET'])
     def ano_select_data(prvdType, prvdId ,tplgType, metricType, task):
-        resource_id = request.args.get('resource-id')
+        resource_id = request.args.get('resource_id')
         model = request.args.get('model')
         startdate = request.args.get('from')
         enddate = request.args.get('to')
         sort = request.args.get('sort')
         aggr = request.args.get('aggregation')
-        timebucket = request.args.get('time-bucket')
+        timebucket = request.args.get('time_bucket')
         column = request.args.get('column')
         measure= request.args.get('measure')
         try:
@@ -42,7 +42,7 @@ class CreateUser():
     @app.route('/anomaly/by-hierarchy/nav')
     def sunburst_chart_navigation():
         provider = request.args.get('provider')
-        path = request.args.get('provider-id')
+        path = request.args.get('provider_id')
         startdate = request.args.get('from')
         enddate = request.args.get('to')
         try:
